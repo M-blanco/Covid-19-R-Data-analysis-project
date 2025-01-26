@@ -1,0 +1,187 @@
+---
+title: "04_describe"
+format: html
+editor: visual
+---
+
+### Load augmented data
+
+```{r}
+library(table1)
+data <- read_tsv(file = "../data/03_data_augmented.tsv")
+```
+
+### Rename column
+
+Rename the Death variable to Outcome and Survived/Deceased value for better visualization of the tables
+
+```{r}
+data <- data|>
+  rename(
+    Outcome = 'Death',
+  ) |>
+  mutate(
+    Outcome = case_when(
+      Outcome == 0 ~ 'Survived',
+      Outcome == 1 ~'Deceased')
+  )
+```
+
+### Change from binary to No, Yes and the labels in the tables
+
+```{r}
+tabledat <- data |>
+  mutate(
+      Hypertension_disease = factor(Hypertension_disease, labels = c("No", "Yes")),
+    Diabetes_disease = factor(Diabetes_disease, labels = c("No", "Yes")),
+    CVD_disease = factor(CVD_disease, labels = c("No", "Yes")),
+    COPD_disease = factor(COPD_disease, labels = c("No", "Yes")),
+    Cerebrovascular_disease = factor(Cerebrovascular_disease, labels = c("No", "Yes")),
+    Chronic_Kidney_disease = factor(Chronic_Kidney_disease, labels = c("No", "Yes")),
+    Malignant_tumor_disease = factor(Malignant_tumor_disease, labels = c("No", "Yes")),
+    Immunodeficiency_disease = factor(Immunodeficiency_disease, labels = c("No", "Yes")),
+    Other_disease = factor(Other_disease, labels = c("No", "Yes")),
+    Whole_body_symptoms = factor(Whole_body_symptoms, labels = c("No", "Yes")),
+    Respiratory_symptoms = factor(Respiratory_symptoms, labels = c("No", "Yes")),
+    Cardiovascular_symptoms = factor(Cardiovascular_symptoms, labels = c("No", "Yes")),
+    Other_symptoms = factor(Other_symptoms, labels = c("No", "Yes")),
+    Nervous_symptoms = factor(Nervous_symptoms, labels = c("No", "Yes")),
+    Gastrointestinal_symptoms = factor(Gastrointestinal_symptoms, labels = c("No", "Yes")),
+    Mask_Oxygen_therapy = factor(Mask_Oxygen_therapy, labels = c("No", "Yes")),
+    NonInvasive_Oxygen_therapy = factor(NonInvasive_Oxygen_therapy, labels = c("No", "Yes")),
+    Invasive_Oxygen_therapy = factor(Invasive_Oxygen_therapy, labels = c("No", "Yes")),
+    HighFlow_Oxygen_therapy = factor(HighFlow_Oxygen_therapy, labels = c("No", "Yes"))
+  )
+
+label(tabledat[["Hypertension_disease"]]) <- "Hypertension"
+label(tabledat[["Diabetes_disease"]]) <- "Diabetes"
+label(tabledat[["CVD_disease"]]) <- "Cardiovascular Disease (CVD)"
+label(tabledat[["COPD_disease"]]) <- "Chronic Obstructive Pulmonary Disease (COPD)"
+label(tabledat[["Cerebrovascular_disease"]]) <- "Cerebrovascular Disease"
+label(tabledat[["Chronic_Kidney_disease"]]) <- "Chronic Kidney Disease"
+label(tabledat[["Malignant_tumor_disease"]]) <- "Malignant Tumor"
+label(tabledat[["Immunodeficiency_disease"]]) <- "Immunodeficiency"
+label(tabledat[["Other_disease"]]) <- "Other Disease"
+label(tabledat[["Whole_body_symptoms"]]) <- "Whole Body Symptoms"
+label(tabledat[["Respiratory_symptoms"]]) <- "Respiratory Symptoms"
+label(tabledat[["Cardiovascular_symptoms"]]) <- "Cardiovascular Symptoms"
+label(tabledat[["Other_symptoms"]]) <- "Other Symptoms"
+label(tabledat[["Nervous_symptoms"]]) <- "Nervous Symptoms"
+label(tabledat[["Gastrointestinal_symptoms"]]) <- "Gastrointestinal Symptoms"
+label(tabledat[["Age_range"]]) <- "Age Group (Years)"
+label(tabledat[["Hospitalization_days"]]) <- "Hospitalization Time (Days)"
+label(tabledat[["ICU_hospitalization_days"]]) <- "ICU Hospitalization Time (Days)"
+label(tabledat[["Fever_days"]]) <- "Fever Duration (Days)"
+
+label(tabledat[["Antiviral_Drug"]]) <- "Antiviral Drug"
+label(tabledat[["CTSS_score_1"]]) <- "CTSS score 1"
+label(tabledat[["CTSS_score_2"]]) <- "CTSS score 2"
+label(tabledat[["Charlson_index[score]"]]) <- "Charlson index score"
+label(tabledat[["Mask_Oxygen_therapy"]]) <- "Mask Oxygen Therapy"
+label(tabledat[["NonInvasive_Oxygen_therapy"]]) <- "Non-Invasive Oxygen Therapy"
+label(tabledat[["Invasive_Oxygen_therapy"]]) <- "Invasive Oxygen Therapy"
+label(tabledat[["HighFlow_Oxygen_therapy"]]) <- "High Flow Oxygen Therapy"
+```
+
+### Exclude NA values from tables
+
+```{r}
+tabledat <- tabledat |> 
+  mutate(
+    Hypertension_disease = factor(Hypertension_disease, exclude = NULL),
+    Diabetes_disease = factor(Diabetes_disease, exclude = NULL),
+    CVD_disease = factor(CVD_disease, exclude = NULL),
+    COPD_disease = factor(COPD_disease, exclude = NULL),
+    Cerebrovascular_disease = factor(Cerebrovascular_disease, exclude = NULL),
+    Malignant_tumor_disease = factor(Malignant_tumor_disease, exclude = NULL),
+    Immunodeficiency_disease = factor(Immunodeficiency_disease, exclude = NULL),
+    Other_disease = factor(Other_disease, exclude = NULL),
+    Whole_body_symptoms = factor(Whole_body_symptoms, exclude = NULL),
+    Respiratory_symptoms = factor(Respiratory_symptoms, exclude = NULL),
+    Cardiovascular_symptoms = factor(Cardiovascular_symptoms, exclude = NULL),
+    Other_symptoms = factor(Other_symptoms, exclude = NULL),
+    Nervous_symptoms = factor(Nervous_symptoms, exclude = NULL),
+    Gastrointestinal_symptoms = factor(Gastrointestinal_symptoms, exclude = NULL),
+    Chronic_Kidney_disease = factor(Chronic_Kidney_disease, exclude = NULL),
+    ICU_hospitalization_days = factor(ICU_hospitalization_days, exclude = NULL),
+    ICU_hospitalization_days = as.numeric(ICU_hospitalization_days),
+    Antiviral_Drug = factor(Antiviral_Drug, exclude = NULL),
+    CTSS_score_1 = factor(CTSS_score_1, exclude = NULL),
+    CTSS_score_1 = as.numeric(CTSS_score_1),
+    CTSS_score_2 = factor(CTSS_score_2, exclude = NULL),
+    CTSS_score_2 = as.numeric(CTSS_score_2),
+    Fever_days = factor(Fever_days, exclude = NULL),
+    Fever_days = as.numeric(Fever_days),
+    `Charlson_index[score]` = factor(`Charlson_index[score]`, exclude = NULL),
+    `Charlson_index[score]` = as.numeric(`Charlson_index[score]`),
+    Mask_Oxygen_therapy = factor(Mask_Oxygen_therapy, exclude = NULL),
+    NonInvasive_Oxygen_therapy = factor(NonInvasive_Oxygen_therapy, exclude = NULL),
+    Invasive_Oxygen_therapy = factor(Invasive_Oxygen_therapy, exclude = NULL),
+    HighFlow_Oxygen_therapy = factor(HighFlow_Oxygen_therapy, exclude = NULL)
+  )
+```
+
+### Age group, Hospitalization time and ICU hospitalization days by outcome
+
+```{r}
+table1_describe_01 <- table1(
+  x = ~ Age_range + Hospitalization_days + ICU_hospitalization_days | Outcome,
+  data = tabledat,
+  overall = FALSE
+)
+
+output_dir <- "../results"  # Define the relative path to the results folder
+output_file <- file.path(output_dir, "table1_describe_01.html")  # Construct the full file path
+writeLines(as.character(table1_describe_01), output_file)  # Save the table1 object as HTML
+```
+
+### Diseases by outcome
+
+```{r}
+table1_describe_02 <- table1(
+  x = ~ Hypertension_disease + Diabetes_disease + CVD_disease + COPD_disease + Cerebrovascular_disease + Chronic_Kidney_disease + Malignant_tumor_disease + Immunodeficiency_disease + Other_disease | Outcome, 
+  data = tabledat,
+  overall = FALSE
+)
+
+output_dir <- "../results"  
+output_file <- file.path(output_dir, "table1_describe_02.html")  
+writeLines(as.character(table1_describe_02), output_file)  
+```
+
+### Symptoms by outcome
+
+```{r}
+table1_describe_03 <- table1(
+  x = ~  Whole_body_symptoms + Respiratory_symptoms + Cardiovascular_symptoms + Other_symptoms + Nervous_symptoms + Gastrointestinal_symptoms| Outcome,
+  data = tabledat,
+  overall = FALSE
+)
+
+output_dir <- "../results"  
+output_file <- file.path(output_dir, "table1_describe_03.html")  
+writeLines(as.character(table1_describe_03), output_file)  
+```
+
+### Antiviral drug, CTSS, Charlson index score, fever days and onset vs outcome
+
+```{r}
+table1_describe_04 <- table1(
+  x = ~  Antiviral_Drug + CTSS_score_1 + CTSS_score_2 + Fever_days + `Charlson_index[score]` + onset| Outcome, 
+  data = tabledat,
+  overall = FALSE
+)
+
+output_dir <- "../results"  
+output_file <- file.path(output_dir, "table1_describe_04.html")  
+writeLines(as.character(table1_describe_04), output_file)  
+```
+
+### Age group, Symptoms and Diseases by Antiviral Drug
+
+```{r}
+table1(
+   x = ~ Age_range + Hypertension_disease + Diabetes_disease + CVD_disease + COPD_disease + Cerebrovascular_disease + Chronic_Kidney_disease + Malignant_tumor_disease + Immunodeficiency_disease + Other_disease + Whole_body_symptoms + Respiratory_symptoms + Cardiovascular_symptoms + Other_symptoms + Nervous_symptoms + Gastrointestinal_symptoms| Antiviral_Drug,
+  data = tabledat
+)
+```

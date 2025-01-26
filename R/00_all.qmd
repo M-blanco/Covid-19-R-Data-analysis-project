@@ -1,0 +1,59 @@
+---
+title: "00_all"
+format: html
+editor: visual
+---
+
+### Load Libraries
+
+```{r, warning=FALSE, message=FALSE}
+#Load all libraries
+library(ggplot2)
+library(readxl)
+library(tidyverse)
+library(table1)
+library(stringr)
+library(cowplot)
+library(reshape2)
+library(patchwork)
+library(purrr)
+library(broom)
+library(knitr)
+
+```
+
+### Load Data
+
+```{r}
+knit("01_load.qmd")
+```
+
+### Clean Data
+
+```{r}
+knit("02_clean.qmd")
+```
+
+### Augment Data
+
+```{r}
+knit("03_augment.qmd")
+```
+
+### Description and Analysis
+
+```{r}
+knit("04_describe.qmd")
+```
+
+```{r}
+knit("05_analysis_01.qmd")
+```
+
+```{r}
+knit("05_analysis_02.qmd")
+```
+
+```{r}
+knit("05_analysis_03.qmd")
+```

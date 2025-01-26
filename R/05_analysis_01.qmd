@@ -1,0 +1,297 @@
+---
+title: "05_analysis_1"
+author: "Natalia Feced Garcia"
+format: html
+editor: visual
+---
+
+# Initial Exploration of Data
+
+This analysis will create the figures for the initial exploration of the data - visualizing various variables and their impact on the outcome of the patients.
+
+## Load Data
+
+```{r, echo = FALSE}
+data <- read_tsv(file = "../data/03_data_augmented.tsv", show_col_types = FALSE)
+```
+
+```{r, echo = FALSE}
+data <- data |> 
+  mutate(Death = as.factor(Death))
+```
+
+## Outcome Visualizations
+
+### Age Ranges
+
+```{r, echo = FALSE}
+ages_data <- data |> 
+  group_by(Age_range, Death) |> 
+  summarise(n = n()) |> 
+  ungroup() |> 
+  group_by(Age_range) |> 
+  mutate(percentage = n / sum(n) * 100)  
+
+
+ages_plot <- ggplot(ages_data, aes(fill = Death, y = n, x = Age_range)) +
+  geom_bar(stat = "identity", position = "stack", alpha = 0.7, color = "black") +
+  geom_text(
+    aes(label = paste0(round(percentage, 1), "%")),  
+    position = position_stack(vjust = 0.5),
+    color = "white", fontface = "bold", size = 3.5) +
+  scale_fill_manual(
+    values = c("1" = "#5995ED", "0" = "#DB3069"),
+    labels = c("1" = "Deceased", "0" = "Survived")
+  ) +
+  theme_minimal() +
+  labs(
+    title = 'Distribution of Age Groups Across Outcome',
+    x = "Age Groups",
+    y = "Number of Patients",
+    fill = "Outcome"
+  ) +
+  theme(
+    axis.text.x = element_text(hjust = 1),
+    legend.position = "top"
+  )
+
+ggsave(
+  filename = "../results/05_key_plot_1.png",
+  plot = ages_plot)
+```
+
+### Antiviral Drug
+
+```{r, echo = FALSE}
+antivir_plot1 <- data |> 
+  group_by(Antiviral_Drug, Age_range) |>
+  select(Antiviral_Drug, Age_range) |>
+  filter(!is.na(Antiviral_Drug)) |>
+  summarise(n = n()) |>
+  mutate(percentage = n / sum(n) * 100) |> 
+  ggplot(mapping = aes(fill = Antiviral_Drug, y = n, x = Age_range)) +
+  geom_bar(stat = "identity", position = "stack", alpha = 0.7, color = "black") +
+  geom_text(
+    aes(label = paste0(round(percentage, 1), "%")),  
+    position = position_stack(vjust = 0.5),
+    color = "white", fontface = "bold", size = 3.5) +
+  scale_fill_manual(
+    values = c("Paxlovid" = "#FF4500", "Azduvine" = "#0CCE6B", "None" = "#FFAD05"),
+  ) +
+theme_minimal() +
+  labs(title = 'Distribution of Age Groups across Antiviral Drug Administrations',
+       x = "Age Groups",
+       y = "Number of Patients",
+       fill = "Antiviral Drug Type") +
+  theme(
+    axis.text.x = element_text(hjust = 1),
+    legend.position = "top"
+  )
+
+antivir_plot2 <- data |> 
+  mutate(Death = factor(Death, levels = c("1", "0"))) |> 
+  group_by(Antiviral_Drug, Death) |>
+  select(Antiviral_Drug, Death) |>
+  filter(!is.na(Antiviral_Drug)) |>
+  summarise(n = n()) |>
+  mutate(percentage = n / sum(n) * 100) |> 
+  ggplot(mapping = aes(fill = Antiviral_Drug, y = n, x = Death)) +
+  geom_bar(stat = "identity", position = "stack", alpha = 0.7, color = "black") +
+  geom_text(
+    aes(label = paste0(round(percentage, 1), "%")),  
+    position = position_stack(vjust = 0.5),
+    color = "white", fontface = "bold", size = 3.5) +
+  scale_x_discrete(
+    labels = c(
+      "1" = "Deceased",
+      "0" = "Survived")) +
+  scale_fill_manual(
+    values = c("Paxlovid" = "#FF4500", "Azduvine" = "#0CCE6B", "None" = "#FFAD05"),
+  ) +
+theme_minimal() +
+  labs(title = 'Distribution of Outcome across Antiviral Drug Administrations',
+       x = "Outcome",
+       y = "Number of Patients",
+       fill = "Antiviral Drug Type") +
+  theme(
+    axis.text.x = element_text(hjust = 1),
+    legend.position = "top"
+  )
+
+ggsave(
+  filename = "../results/05_key_plot_2.png",
+  plot = antivir_plot1)
+
+ggsave(
+  filename = "../results/05_key_plot_3.png",
+  plot = antivir_plot2)
+```
+
+### Symptoms
+
+```{r, echo = FALSE}
+symptom_columns <- c("Whole_body_symptoms", "Respiratory_symptoms", "Cardiovascular_symptoms", "Other_symptoms", "Nervous_symptoms", "Gastrointestinal_symptoms")
+
+symptoms <- data |>
+  pivot_longer(
+    cols = all_of(symptom_columns),
+    names_to = "Symptom",
+    values_to = "Presence"
+  ) |>
+  filter(Presence == 1) |>
+  select(Age_range, Death, Symptom, Presence) 
+
+symp_plot <- ggplot(symptoms, mapping = aes(fill = Death, x = Symptom)) +
+  geom_bar(alpha = .7, color = "black") +
+  scale_fill_manual(
+    values = c("1" = "#DB3069", "0" = "#5995ED"),
+     labels = c(
+      "1" = "Deceased",
+      "0" = "Survived")
+  ) +
+  scale_x_discrete(
+    labels = c(
+      "Cardiovascular_symptoms" = "Cardiovascular",
+      "Gastrointestinal_symptoms" = "Gastrointestinal",
+      "Nervous_symptoms" = "Nervous",
+      "Other_symptoms" = "Other",
+      "Respiratory_symptoms" = "Respiratory",
+      "Whole_body_symptoms" = "Whole Body"
+    )) +
+  labs(
+    title = "Outcome Distribution accross Symptoms",
+    x = "Symptom",
+    y = "Number of Patients",
+    fill = "Outcome"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "top"
+  )
+
+ggsave(
+  filename = "../results/05_key_plot_4.png",
+  plot = symp_plot)
+```
+
+### Diseases
+
+```{r, echo = FALSE}
+disease_cols <- c("Hypertension_disease", "Diabetes_disease", "CVD_disease", "COPD_disease", "Cerebrovascular_disease", "Chronic_Kidney_disease", "Malignant_tumor_disease", "Immunodeficiency_disease", "Other_disease")
+
+diseases <- data |>
+  pivot_longer(
+    cols = all_of(disease_cols),
+    names_to = "Disease",
+    values_to = "Presence"
+  ) |>
+  filter(Presence == 1) |>
+  select(Age_range, Death, Disease, Presence, Antiviral_Drug) 
+
+dis_plot <- ggplot(diseases, mapping = aes(fill = Death, x = Disease)) +
+  geom_bar(alpha = .7, color = "black") +
+  scale_fill_manual(
+    values = c("1" = "#DB3069", "0" = "#5995ED"),
+     labels = c(
+      "1" = "Deceased",
+      "0" = "Survived")
+  ) +
+  scale_x_discrete(
+      labels = c(
+      "Cerebrovascular_disease" = "Cerebrovascular",
+      "Chronic_Kidney_disease" = "Chronic Kidney",
+      "COPD_disease" = "COPD",
+      "CVD_disease" = "CVD",
+      "Diabetes_disease" = "Diabetes",
+      "Hypertension_disease" = "Hypertension",
+      "Immunodeficiency_disease" = "Immunodeficiency",
+      "Malignant_tumor_disease" = "Malignant Tumor",
+      "Other_disease" = "Other"
+    )) +
+  labs(
+    title = "Outcome Distribution accross Diseases",
+    x = "Disease",
+    y = "Number of Patients",
+    fill = "Outcome"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "top"
+  )
+
+ggsave(
+  filename = "../results/05_key_plot_5.png",
+  plot = dis_plot)
+```
+
+### CT Severity Score
+
+```{r, echo = FALSE}
+ctprogress <- data |>
+  select(CTSS_score_1, CTSS_score_2, CT_D1_days_1, CT_D1_days_2, Affected_lung_lobes_1, Affected_lung_lobes_2, Death)
+  
+ct_data <- ctprogress |>
+  pivot_longer(
+    cols = c(CTSS_score_1, CTSS_score_2, Affected_lung_lobes_1, Affected_lung_lobes_2, CT_D1_days_1, CT_D1_days_2),
+    names_to = c(".value", "CT_Scan"),
+    names_pattern = "(.+?)_(\\d)$"
+  ) |>
+  filter(!is.na(CTSS_score) & !is.na(CT_D1_days))
+
+ctss_plot <- ggplot(ct_data, aes(x = CTSS_score, fill = Death)) +
+  geom_density(alpha = 0.7) +
+  scale_fill_manual(
+    values = c("0" = "#5995ED", "1" = "#DB3069"),
+    label = c("1" = "Deceased", "0" = "Survived")
+  ) +
+  facet_wrap(~ CT_Scan, labeller = as_labeller(c("1" = "CT1", "2" = "CT2"))) +
+  labs(
+    title = "CT Severity Score Distribution by Outcome",
+    x = "CT Severity Score",
+    y = "Density",
+    fill = "Outcome"
+  ) +
+  theme_minimal() +
+    theme(
+    axis.text.x = element_text(hjust = 1),
+    legend.position = "top"
+  )
+
+ggsave(
+  filename = "../results/05_key_plot_6.png",
+  plot = ctss_plot)
+```
+
+### Early Onset Temperature
+
+```{r, echo = FALSE}
+temp_data <- data |>
+  group_by(Death, `Disease_onset_D1_highest_body_temperature[℃]`) |>
+  select(Death, `Disease_onset_D1_highest_body_temperature[℃]`) |>
+  filter(!is.na(`Disease_onset_D1_highest_body_temperature[℃]`))
+
+temp_plot <- ggplot(data = temp_data, mapping = aes(x = `Disease_onset_D1_highest_body_temperature[℃]`, fill = Death)) +
+  geom_density(alpha = 0.7) +
+  scale_fill_manual(
+    values = c("0" = "#5995ED", "1" = "#DB3069"),
+    label = c("1" = "Deceased", "0" = "Survived")
+  ) +
+  labs(
+    title = "Temperature Distribution by Outcome",
+    x = "Temperature",
+    y = "Density",
+    fill = "Outcome"
+  ) +
+  theme_minimal() +
+    theme(
+    axis.text.x = element_text(hjust = 1),
+    axis.text.y = element_text(size = 10),
+    plot.title = element_text(hjust = 0.5)
+  )
+
+ggsave(
+  filename = "../results/05_key_plot_7.png",
+  plot = temp_plot)
+```

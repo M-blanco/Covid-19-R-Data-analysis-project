@@ -1,0 +1,261 @@
+---
+title: "05_analysis_03"
+author: "Miguel Blanco"
+format: html
+editor: visual
+---
+
+## Statistical analysis of Paxlovid effect on Lymphocytes
+
+```{r}
+data <- read_tsv(file = "../data/03_data_augmented.tsv", show_col_types = FALSE)
+```
+
+### 1. Check normality
+
+```{r}
+data |>
+  pull(`D7_lymphocyte_count[10^9/L]`) |> 
+  shapiro.test()
+```
+
+Visualization of distribution
+
+```{r}
+Lymp_dist <- ggplot(data, aes(x = `D7_lymphocyte_count[10^9/L]`)) +
+  geom_histogram(binwidth = 0.5, fill = "skyblue", color = "black") +
+  labs(title = "Distribution of Day 7 Lymphocyte Levels [10^9/L]", x = "Lymphocyte Levels", y = "Count") +
+  xlim(0,4)+
+  theme_minimal()+
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold")
+  )
+
+ggsave("../results/05_Lymp_distribution.png", plot = Lymp_dist, 
+       width = 10, height = 6, dpi = 300)
+```
+
+### 2. Wilcox-test and summary stats
+
+Summary statistics
+
+```{r}
+
+lymph_stats <- data |> 
+  group_by(`Antiviral_drugs_(1_nema_0_no)`) |> 
+  summarise(
+    median_lymphocytes_D7 = median(`D7_lymphocyte_count[10^9/L]`, na.rm = TRUE),
+    mean_lymphocytes_D7 = mean(`D7_lymphocyte_count[10^9/L]`, na.rm = TRUE),
+    count = n(),
+    median_lymphocytes_D1 = median(`D1_lymphocyte_count[10^9/L]`, na.rm = TRUE),
+    mean_lymphocytes_D1 = mean(`D1_lymphocyte_count[10^9/L]`, na.rm = TRUE),
+    count = n()
+  )
+```
+
+Wilcox test
+
+```{r}
+wilcox_res <- wilcox.test(
+  `D7_lymphocyte_count[10^9/L]` ~ `Antiviral_drugs_(1_nema_0_no)`,
+  data = data
+)
+
+
+p_value <- signif(wilcox_res$p.value, digits = 3)
+```
+
+```{r}
+p1 <- ggplot(data = data,
+       mapping = aes(x = `Antiviral_drugs_(1_nema_0_no)`,
+                     y = `D1_lymphocyte_count[10^9/L]`)) +
+  geom_boxplot()+
+  ylim(0,2)+
+  theme_minimal()
+
+p2 <- ggplot(data = data |> filter(`D7_lymphocyte_count[10^9/L]` < 15),
+       mapping = aes(x = `Antiviral_drugs_(1_nema_0_no)`,
+                     y = `D7_lymphocyte_count[10^9/L]`)) +
+  ylim(0,2)+
+  geom_boxplot()+
+  theme_minimal()
+
+p1+p2
+```
+
+```{r}
+data <- data |>  
+  mutate(`Antiviral_drugs_(1_nema_0_no)` = factor(
+    `Antiviral_drugs_(1_nema_0_no)`, 
+    levels = c(0,1),
+    labels = c("No", "Yes"))) |>
+  mutate(Death = factor(Death, levels = c(0, 1), labels = c("No", "Yes")))
+```
+
+```{r}
+Lymp_wilcox1 <- ggplot(data |> filter(Lymphocyte_Test_Day == "D7_lymphocyte_copy"), aes(x = Lymphocyte_Test_Day, y = Lymphocytes, color = `Antiviral_drugs_(1_nema_0_no)`)) +
+  geom_boxplot(alpha = 0.8) + 
+  scale_color_manual(
+    values = c("Yes" = "#5995ED", "No" = "#DB3069")
+  ) +
+  labs(
+    title = "Lymphocyte Counts on Day 7",
+    x = "Lymphocyte_Test_Day",
+    y = "Lymphocyte Count [10^9/L]",
+    color = "Paxlovid Consumption"
+  ) +
+  scale_x_discrete(labels = "D7_LC") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    legend.position = "top" 
+  ) +
+  # Agregar p-value como texto en el gráfico
+  annotate(
+    "text",
+    x = 1, # Ajusta la posición en el eje x
+    y = max(data$Lymphocytes, na.rm = TRUE) * 0.95, # Colocar cerca del límite superior del eje y
+    label = paste("p-value =", p_value),
+    size = 5,
+    hjust = 0.5,
+    color = "black"
+  )
+
+# Agregar p-value al segundo gráfico
+Lymp_wilcox2 <- ggplot(data |> filter(Lymphocyte_Test_Day == "D7_lymphocyte_copy"), aes(x = Lymphocyte_Test_Day, y = Lymphocytes, color = `Antiviral_drugs_(1_nema_0_no)`)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.8) + 
+  scale_color_manual(
+    values = c("Yes" = "#5995ED", "No" = "#DB3069")
+  ) +
+  labs(
+    title = "Lymphocyte Counts on Day 7",
+    x = "Lymphocyte_Test_Day",
+    y = "Lymphocyte Count [10^9/L]",
+    color = "Paxlovid Consumption"
+  ) +
+  scale_y_continuous(limits = c(0, 3)) + 
+  scale_x_discrete(labels = "D7_LC") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    legend.position = "top"
+  ) +
+  # Agregar p-value como texto en el gráfico
+  annotate(
+    "text",
+    x = 1, # Ajusta la posición en el eje x
+    y = 2.8, # Ajusta la posición en el eje y dentro de los límites establecidos
+    label = paste("p-value =", p_value),
+    size = 5,
+    hjust = 0.5,
+    color = "black"
+  )
+
+# Guardar los gráficos con el p-value
+ggsave("../results/05_Lymp_wilcox1_with_pvalue.png", plot = Lymp_wilcox1, 
+       width = 10, height = 6, dpi = 300)
+ggsave("../results/05_Lymp_wilcox2_with_pvalue.png", plot = Lymp_wilcox2, 
+       width = 10, height = 6, dpi = 300)
+```
+
+Muerte con limfocitos graphs
+
+```{r}
+wilcox_res_death <- wilcox.test(
+  Lymphocytes ~ Death,
+  data = data
+)
+
+# Extraer el p-valor
+p_value_death <- signif(wilcox_res_death$p.value, digits = 3)
+```
+
+```{r}
+p1 <- ggplot(data, aes(x = Lymphocyte_Test_Day, y = Lymphocytes, color = Death)) +
+  geom_boxplot(aes(fill = Death), alpha = 0.8) +
+  scale_fill_manual(
+    values = c("Yes" = "#5995ED", "No" = "#DB3069"),
+    labels = c("Yes" = "Deceased", "No" = "Survived")
+  ) +
+  scale_color_manual(
+    values = c("Yes" = "#5995ED", "No" = "#DB3069"),
+    labels = c("Yes" = "Deceased", "No" = "Survived")
+  ) +
+  labs(
+    x = "Lymphocyte_Test_Day",
+    y = "Lymphocyte Count [10^9/L]",
+    color = "Outcome",
+    fill = "Outcome"
+  ) +
+  scale_x_discrete(labels = c("D1_LC", "D7_LC")) +
+  theme_minimal() +
+  theme(
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    strip.text = element_blank(),
+    plot.margin = margin(t = 10, b = 20, l = 10, r = 10)
+  ) +
+  facet_wrap(~Death, scales = "free")
+
+# p2 sin p-valor
+p2 <- ggplot(data, aes(x = Lymphocyte_Test_Day, y = Lymphocytes, color = Death)) +
+  geom_boxplot(aes(fill = Death), outlier.shape = NA, alpha = 0.8) +
+  scale_fill_manual(
+    values = c("Yes" = "#5995ED", "No" = "#DB3069"),
+    labels = c("Yes" = "Deceased", "No" = "Survived")
+  ) +
+  scale_color_manual(
+    values = c("Yes" = "#5995ED", "No" = "#DB3069"),
+    labels = c("Yes" = "Deceased", "No" = "Survived")
+  ) +
+  labs(
+    x = "Lymphocyte_Test_Day",
+    y = "Lymphocyte Count [10^9/L]",
+    color = "Outcome",
+    fill = "Outcome"
+  ) +
+  scale_y_continuous(limits = c(0, 3)) +
+  scale_x_discrete(labels = c("D1_LC", "D7_LC")) +
+  theme_minimal() +
+  theme(
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 12),
+    strip.text = element_blank(),
+    plot.margin = margin(t = 20, b = 10, l = 10, r = 10)
+  ) +
+  facet_wrap(~Death, scales = "free")
+
+# p-valor como título adicional
+p_value <- signif(wilcox_res_death$p.value, digits = 3) # Calcular el p-valor
+Lymp_death <- (p1 + p2) +
+  plot_layout(guides = "collect") +
+  plot_annotation(
+    title = "Lymphocyte Counts on Day 1 and Day 7",
+    caption = paste("p-value =", p_value_death), # Agregar p-valor como subtítulo
+    theme = theme(
+      plot.title = element_text(
+        hjust = 0.5,
+        size = 16,
+        margin = margin(b = 5)
+      ),
+      plot.caption = element_text(
+        hjust = 0.5,
+        size = 12,
+        margin = margin(t = 10)
+      )
+    )
+  ) &
+  theme(
+    legend.position = "top",
+    legend.justification = "center",
+    legend.margin = margin(t = 0, b = 5)
+  )
+
+# Guardar el gráfico
+ggsave("../results/05_Lymp_death_withp_single.png", plot = Lymp_death, 
+       width = 10, height = 6, dpi = 300)
+```
