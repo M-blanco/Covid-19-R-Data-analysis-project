@@ -1,0 +1,295 @@
+---
+title: "Clinical data of COVID-19 infected patients"
+author: "Group 05 - Daniel Gil, Luis Martín, Miguel Blanco, Natalia Feced, Xavi Chapatte"
+format: 
+  revealjs:
+    height: 900
+    width: 1600
+    theme: simple
+    transition: none
+    slideNumber: true
+
+editor: visual
+subtite: "A case of study for critically ill patients"
+css: styles.css
+---
+
+## Introduction
+
+**Covid-19**\
+
+::: {style="font-size: 40px;"}
+-   Caused by the [**SARS-CoV-2 virus**]{.fragment .highlight-red}, with varying severity globally.
+-   [**Symptoms**]{.fragment .highlight-red} include: fever, cough, myalgia, fatigue, and severe respiratory failure in critical cases.
+:::
+
+::: nonincremental
+**Vaccines and Antiviral drugs**\
+
+-   [**Vaccines**]{.fragment .highlight-red} have reduced the global burden of COVID-19 significantly.
+-   Before widespread vaccination, [**antivirals**]{.fragment .highlight-red} played a key role in severe cases.
+-   [**Paxlovid**]{.fragment .highlight-red} (SARS-CoV-2 main protease inhibitor) and [**Azduvine**]{.fragment .highlight-red} emerged as a promising treatments, reducing severe outcomes and mortality.
+:::
+
+::: footer
+Article 1 - ScienceDirect\
+Article 2 - PMC\]
+:::
+
+## Materials - Dataset
+
+::: {.column width="40%"}
+::: {style="font-size: 39px; text-align: justify;"}
+\
+
+-   [**Clinical data**]{.fragment .highlight-red} from a medical center in China between December 2022 - January 2023.
+-   Dataset with a final number of 123 [**variables**]{.fragment .highlight-red} and 150 [**observations**]{.fragment .highlight-red}.
+-   Researchers concluded [**Paxlovid**]{.fragment .highlight-red} significantly improved patient outcomes.
+-   [**Our aim**]{.fragment .highlight-red}: Test the conclusion on publicly available data
+-   Explore parameters contributing to [**survival**]{.fragment .highlight-red} or [**death**]{.fragment .highlight-red}.
+:::
+:::
+
+::: {.column width="27%"}
+**Table 1**\
+<iframe src="../results/table1_describe_01.html" width="100%" height="300"></iframe>\
+**Diseases**\
+<iframe src="../results/table1_describe_02.html" width="100%" height="300"></iframe>
+:::
+
+::: {.column width="28%"}
+**Table 2**\
+<iframe src="../results/table1_describe_04.html" width="100%" height="300"></iframe>\
+**Symptoms**\
+<iframe src="../results/table1_describe_03.html" width="100%" height="300"></iframe>
+:::
+
+------------------------------------------------------------------------
+
+## Methodology
+
+::: row
+::: {.column width="49%"}
+::: fragment
+### Data Clean {style="font-size: 38px;"}
+
+::: nonincremental
+::: {style="font-size: 26px;"}
+-⁠ ⁠**Unify** missing values notation (NA values)
+
+-⁠ ⁠**Remove** columns with more than 70% NAs
+
+-⁠ ⁠**Adjust** variables names
+
+-⁠ ⁠**Column-specific changes** (removing non-numerical final characters)
+:::
+:::
+:::
+:::
+
+::: {.column width="49%"}
+::: fragment
+### Data Augment {style="font-size: 38px;"}
+
+::: nonincremental
+::: {style="font-size: 26px;"}
+-   ⁠**Change dirty columns** to binary-values columns
+-   ⁠**Change (some) numeric values to more descriptive values**
+-   ⁠**Polish** binary values
+-   ⁠**Create new variables** (Mean_Age, Early/Late_Onset, Sum_Basic_Diseases ...)
+:::
+:::
+:::
+:::
+:::
+
+::: row
+::: {.column width="100%"}
+<figure>![](images/messy_dataset.png)</figure>
+:::
+:::
+
+------------------------------------------------------------------------
+
+## Analysis Planning
+
+::: {.absolute-container style="position: relative; width: 100%; height: 100%;"}
+::: fragment
+### Initial Exploration {style="position: absolute; top: 8%; left: 9%; font-size: 50px;"}
+
+#### What variables we think are more related to the Outcome? {style="position: absolute; top: 15%; left: 1%; font-size: 28px;"}
+:::
+
+::: fragment
+### Statistical Exploration {style="position: absolute; top: 33%; left: 59%; font-size: 50px;"}
+
+#### What variables are statistically more related to the Outcome? {style="position: absolute; top: 40%; left: 50%; font-size: 28px;"}
+:::
+
+::: fragment
+### Paxlovid Exploration {style="position: absolute; top: 62%; left: 30%; font-size: 50px;"}
+
+#### Can we get the same conclusion about the Paxlovid efficacy with this data? {style="position: absolute; top: 69%; left: 17%; font-size: 28px;"}
+:::
+:::
+
+------------------------------------------------------------------------
+
+## Data Description
+
+### Factors Influencing Mortality: Overview
+
+\
+
+::: rows
+::: columns
+::: {.column width="33%"}
+<figure>![](images/05_key_plot_1-02.png){width="800"}</figure>
+:::
+
+::: {.column width="33%"}
+<figure>![](images/05_key_plot_3-02.png){width="800"}</figure>
+:::
+
+::: {.column width="33%"}
+<figure>![](images/05_key_plot_7-02.png){width="800"}</figure>
+:::
+:::
+:::
+
+------------------------------------------------------------------------
+
+## Data Description
+
+### Factors Influencing Mortality: Overview
+
+\
+
+::: rows
+::: columns
+::: {.column width="33%"}
+<figure>![](images/05_key_plot_4-02.png){width="800"}</figure>
+:::
+
+::: {.column width="33%"}
+<figure>![](images/05_key_plot_5-02.png){width="800"}</figure>
+:::
+
+::: {.column width="33%"}
+<figure>![](images/05_key_plot_6-02.png){width="800"}</figure>
+:::
+:::
+:::
+
+------------------------------------------------------------------------
+
+## Analysis
+
+### Statistical analysis and modelling
+
+::: columns
+::: {.column width="49%"}
+To examine the relationship between each variable and the outcome, we fit **logistic regression models** and evaluate the estimates. These estimates indicate the strength and direction of association between each variable and the outcome.
+
+\
+
+```{r, eval=FALSE, echo=TRUE}
+results <- data_numeric |> 
+  select(-Death) |>  
+  # Pivot longer to have one variable per row
+  pivot_longer(cols = everything(), 
+               names_to = "variable", 
+               values_to = "value") |> 
+  group_by(variable) |> 
+  # Fit model
+  summarise(
+    model = list(glm(Death ~ value, 
+                     data = data, family = binomial))
+    )
+    
+```
+:::
+
+::: {.column width="49%"}
+<figure>![](../results/05_esimate_size_plot.png)</figure>
+:::
+:::
+
+------------------------------------------------------------------------
+
+## Analysis
+
+### Statistical analysis and modelling
+
+::: columns
+::: {.column width="49%"}
+-   In the logistic regression model, we found that the **Lymphocytes** count at day 7 is the variable that better determines the outcome.
+
+-   Can the treatment with **Paxlovid** modify the Lymphocytes level?
+
+\
+
+```{r, eval = FALSE, echo=TRUE}
+wilcox.test(
+  `D7_lymphocyte_count[10^9/L]` ~ 
+    `Antiviral_drugs_(1_nema_0_no)`,
+  data = data
+)
+```
+:::
+
+::: {.column width="49%"}
+<figure>![](../results/05_Lymp_wilcox1_with_pvalue.png)</figure>
+:::
+:::
+
+## Analysis
+
+### Statistical analysis and modelling
+
+::: columns
+::: {.column width="49%"}
+-   In the logistic regression model, we found that the **Lymphocytes** count at day 7 is the variable that better determines the outcome.
+
+-   Can the treatment with **Paxlovid** modify the Lymphocytes level?
+
+\
+
+```{r, eval = FALSE, echo=TRUE}
+wilcox.test(
+  `D7_lymphocyte_count[10^9/L]` ~ 
+    `Antiviral_drugs_(1_nema_0_no)`,
+  data = data
+)
+```
+:::
+
+::: {.column width="49%"}
+<figure>![](../results/05_Lymp_wilcox2_with_pvalue.png)</figure>
+:::
+:::
+
+------------------------------------------------------------------------
+
+## Patient Outcome and Lymphocyte Exploration
+
+<figure>![](../results/05_Lymp_death_withp_single.png){width="2100"}</figure>
+
+------------------------------------------------------------------------
+
+### Discussion and Conclusion
+
+::: {style="margin-top: 100px;"}
+:::
+
+::: nonincremental
+-   In the dataset no difference can be seen in the outcome regarding the antiviral treatment.
+
+\
+
+-   The lymphocyte count in day 7 is the factor that mostly improves survival in the dataset.
+
+\
+
+-   The biological problem has to be thought as complex and interconnected, so no easy conclusion can be obtained and more studies may be needed.
+:::
